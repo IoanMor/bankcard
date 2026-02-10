@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Objects;
 import java.util.Set;
 
 @Entity
@@ -22,6 +23,8 @@ public class User {
     private String username;
     @Column(nullable = false)
     private String password;
+    @Column(name = "active",nullable = false)
+    private Boolean isActive;
     @ManyToMany
     @JoinTable(
             name = "user_roles",
@@ -32,4 +35,16 @@ public class User {
     @OneToMany(mappedBy = "owner", cascade = CascadeType.ALL,fetch = FetchType.LAZY)
     private Set<Card> cards;
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equals(username, user.username) && Objects.equals(password, user.password) && Objects.equals(roles, user.roles) && Objects.equals(cards, user.cards);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(username, password, roles, cards);
+    }
 }

@@ -10,6 +10,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Table(name = "cards")
@@ -38,4 +39,17 @@ public class Card {
 
     @Column(nullable = false)
     private BigDecimal balance = BigDecimal.ZERO;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Card card = (Card) o;
+        return Objects.equals(number, card.number) && Objects.equals(owner, card.owner) && Objects.equals(expiryDate, card.expiryDate) && status == card.status && Objects.equals(balance, card.balance);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(number, owner, expiryDate, status, balance);
+    }
 }
