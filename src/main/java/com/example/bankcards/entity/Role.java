@@ -23,6 +23,7 @@ public class Role {
     @Column(nullable = false, unique = true)
     private String name;
 
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

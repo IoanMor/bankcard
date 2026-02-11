@@ -46,3 +46,4 @@ logging:
     liquibase: INFO
     org.hibernate.SQL: DEBUG
     org.hibernate.jdbc.bind: TRACE
+    org.springframework.security.authentication: DEBUG
