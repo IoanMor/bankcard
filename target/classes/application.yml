@@ -19,7 +19,11 @@ spring:
     username: sa
     password: ''
     driver-class-name: org.h2.Driver
-
+  security:
+    jwt:
+      token:
+       secret: 'some-very-long-random-secret-key-at-least-32-bytes'
+       access-expiration: 900000
   jpa:
     hibernate:
       ddl-auto: none
