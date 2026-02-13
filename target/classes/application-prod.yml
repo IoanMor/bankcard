@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bankcard
+    username: bankuser
+    password: strongpassword
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    show-sql: false
+
+logging:
+  level:
+    root: WARN
+    org.hibernate.SQL: WARN
+    liquibase: WARN

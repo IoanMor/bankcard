@@ -14,40 +14,21 @@ spring:
   application:
     name: bankcard
 
-  datasource:
-    url: jdbc:h2:mem:testdb
-    username: sa
-    password: ''
-    driver-class-name: org.h2.Driver
+  profiles:
+    active: default #сменить при завершении
+
   security:
+    secretKeyCard: 'some-very-long-random-secret-key-12341-12321-6589-87889'
     jwt:
       token:
-       secret: 'some-very-long-random-secret-key-at-least-32-bytes'
-       access-expiration: 900000
+        secret: 'some-very-long-random-secret-key-at-least-32-bytes'
+        access-expiration: 900000
+
   jpa:
     hibernate:
       ddl-auto: none
     open-in-view: false
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        highlight_sql: true
-
 
   liquibase:
     enabled: true
     change-log: classpath:/db/migration/changelog-master.yaml
-
-
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-
-logging:
-  level:
-    liquibase: INFO
-    org.hibernate.SQL: DEBUG
-    org.hibernate.jdbc.bind: TRACE
-    org.springframework.security.authentication: DEBUG

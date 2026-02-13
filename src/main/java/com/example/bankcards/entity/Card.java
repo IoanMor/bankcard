@@ -1,5 +1,6 @@
 package com.example.bankcards.entity;
 
+import com.example.bankcards.util.CardNumberConverter;
 import com.example.bankcards.util.CardStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -21,6 +22,7 @@ public class Card {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Convert(converter = CardNumberConverter.class)
     @Column(nullable = false, unique = true)
     private String number;
 

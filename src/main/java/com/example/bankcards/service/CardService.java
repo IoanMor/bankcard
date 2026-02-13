@@ -5,6 +5,7 @@ import com.example.bankcards.entity.User;
 import com.example.bankcards.repository.CardRepository;
 import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.util.CardStatus;
+import com.example.bankcards.util.GenerateCardNumber;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -23,13 +25,13 @@ public class CardService {
     private final UserRepository userRepository;
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public Card createCard(Long userId, String cardNumber, BigDecimal initialBalance) {
+    public Card createCard(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
 
         Card card = Card.builder()
-                .number(cardNumber)
-                .balance(initialBalance)
+                .number(GenerateCardNumber.generate())
+                .balance(BigDecimal.ZERO)
                 .status(CardStatus.ACTIVE)
                 .owner(user)
                 .build();
@@ -64,21 +66,19 @@ public class CardService {
         return cardRepository.findAll();
     }
 
-
-    public void transferBetweenCards(Long fromCardId, Long toCardId, BigDecimal amount) {
+    public void transferBetweenCards(Long userId,Long fromCardId, Long toCardId, BigDecimal amount) {
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Сумма перевода должна быть положительной");
         }
-
         Card fromCard = cardRepository.findById(fromCardId)
                 .orElseThrow(() -> new IllegalArgumentException("Исходная карта не найдена"));
         Card toCard = cardRepository.findById(toCardId)
                 .orElseThrow(() -> new IllegalArgumentException("Карта назначения не найдена"));
 
-        if (fromCard.getOwner().getId()!=(toCard.getOwner().getId())) {
-            throw new IllegalArgumentException("Перевод возможен только между своими картами");
+        if (!Objects.equals(fromCard.getOwner().getId(),userId) ||
+                !Objects.equals(toCard.getOwner().getId(),userId)) {
+            throw new IllegalArgumentException("Можно переводить только между своими картами");
         }
-
         if (fromCard.getBalance().compareTo(amount) < 0) {
             throw new IllegalArgumentException("Недостаточно средств на карте");
         }
