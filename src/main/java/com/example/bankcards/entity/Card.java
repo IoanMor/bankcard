@@ -2,10 +2,7 @@ package com.example.bankcards.entity;
 
 import com.example.bankcards.util.CardStatus;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -18,6 +15,7 @@ import java.util.Objects;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Card {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
