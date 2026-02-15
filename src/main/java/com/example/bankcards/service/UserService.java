@@ -1,7 +1,9 @@
 package com.example.bankcards.service;
 
 import com.example.bankcards.entity.User;
+import com.example.bankcards.exception.CustomExceptions;
 import com.example.bankcards.repository.UserRepository;
+import org.springframework.data.domain.Page;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,8 +24,13 @@ public class UserService {
     }
 
     public User createUser(String name,String password){
-        User user =  User.builder().username(name).password(passwordEncoder.encode(password)).isActive(true).build();
-        userRepository.save(user);
+        User user = null;
+        try {
+            user = User.builder().username(name).password(passwordEncoder.encode(password)).isActive(true).build();
+            userRepository.save(user);
+        } catch (Exception e) {
+            throw new CustomExceptions.InvalidOperationException("Не удалось создать паользователя");
+        }
         return user;
     }
     public String deleteUser(Object t){
@@ -33,9 +40,9 @@ public class UserService {
                     .orElseThrow(() -> new UsernameNotFoundException("Пользователь с именем " + username + " не найден"));
         } else if (t instanceof Long id) {
             user = userRepository.findById(id)
-                    .orElseThrow(() -> new IllegalArgumentException("Пользователь с ID " + id + " не найден"));
+                    .orElseThrow(() -> new CustomExceptions.EntityNotFoundException("Пользователь с ID " + id + " не найден"));
         } else {
-            throw new IllegalArgumentException("Неверный тип аргумента");
+            throw new CustomExceptions.InvalidOperationException("Неверный тип аргумента");
         }
 
         userRepository.delete(user);
@@ -44,23 +51,23 @@ public class UserService {
 
     public User setActive(Long userId, boolean active) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь с ID " + userId + " не найден"));
+                .orElseThrow(() -> new CustomExceptions.EntityNotFoundException("Пользователь с ID " + userId + " не найден"));
         user.setIsActive(active);
         return userRepository.save(user);
     }
 
     public User getUserByUsername(String username) {
         return  Optional.ofNullable(userRepository.findUserByUsername(username))
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь с именем " + username + " не найден"));
+                .orElseThrow(() -> new CustomExceptions.EntityNotFoundException("Пользователь с именем " + username + " не найден"));
     }
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public Page<User> getAllUsers(int page, int size) {
+        return userRepository.findAll(page,size);
     }
 
     public User changePassword(Long userId, String newPassword) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь с ID " + userId + " не найден"));
+                .orElseThrow(() -> new CustomExceptions.EntityNotFoundException("Пользователь с ID " + userId + " не найден"));
         user.setPassword(passwordEncoder.encode(newPassword));
         return userRepository.save(user);
     }

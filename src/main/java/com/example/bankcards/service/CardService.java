@@ -2,6 +2,7 @@ package com.example.bankcards.service;
 
 import com.example.bankcards.entity.Card;
 import com.example.bankcards.entity.User;
+import com.example.bankcards.exception.CustomExceptions;
 import com.example.bankcards.repository.CardRepository;
 import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.util.CardStatus;
@@ -19,81 +20,66 @@ import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class CardService {
     private final CardRepository cardRepository;
     private final UserRepository userRepository;
 
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public Card createCard(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
-
-        Card card = Card.builder()
-                .number(GenerateCardNumber.generate())
-                .balance(BigDecimal.ZERO)
-                .status(CardStatus.ACTIVE)
-                .owner(user)
-                .build();
-
+    public Card createCard(Long ownerId) {
+        User owner = userRepository.findById(ownerId)
+                .orElseThrow(() -> new CustomExceptions.EntityNotFoundException("Пользователь с id " + ownerId + " не найден"));
+        Card card = new Card();
+        card.setOwner(owner);
+        card.setStatus(CardStatus.ACTIVE);
         return cardRepository.save(card);
     }
 
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public Card setStatus(Long cardId, CardStatus cardStatus) {
+    public Card setStatus(Long cardId, CardStatus status) {
         Card card = cardRepository.findById(cardId)
-                .orElseThrow(() -> new IllegalArgumentException("Карта не найдена"));
-        card.setStatus(cardStatus);
+                .orElseThrow(() -> new CustomExceptions.EntityNotFoundException("Карта с id " + cardId + " не найдена"));
+        card.setStatus(status);
         return cardRepository.save(card);
     }
 
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void deleteCard(Long cardId) {
-        Card card = cardRepository.findById(cardId)
-                .orElseThrow(() -> new IllegalArgumentException("Карта не найдена"));
-        cardRepository.delete(card);
+        if (!cardRepository.existsById(cardId)) {
+            throw new CustomExceptions.EntityNotFoundException("Карта с id " + cardId + " не найдена");
+        }
+        cardRepository.deleteById(cardId);
     }
-
 
     public Page<Card> getCardsForUser(Long userId, int page, int size) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
+        if (!userRepository.existsById(userId)) {
+            throw new CustomExceptions.EntityNotFoundException("Пользователь с id " + userId + " не найден");
+        }
         return cardRepository.findCardsByOwnerId(userId, PageRequest.of(page, size));
     }
 
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public List<Card> getAllCards() {
-        return cardRepository.findAll();
-    }
-
-    public void transferBetweenCards(Long userId,Long fromCardId, Long toCardId, BigDecimal amount) {
-        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Сумма перевода должна быть положительной");
-        }
+    public void transferBetweenCards(Long userId, Long fromCardId, Long toCardId, BigDecimal amount) {
         Card fromCard = cardRepository.findById(fromCardId)
-                .orElseThrow(() -> new IllegalArgumentException("Исходная карта не найдена"));
+                .orElseThrow(() -> new CustomExceptions.EntityNotFoundException("Карта отправителя не найдена"));
         Card toCard = cardRepository.findById(toCardId)
-                .orElseThrow(() -> new IllegalArgumentException("Карта назначения не найдена"));
+                .orElseThrow(() -> new CustomExceptions.EntityNotFoundException("Карта получателя не найдена"));
 
-        if (!Objects.equals(fromCard.getOwner().getId(),userId) ||
-                !Objects.equals(toCard.getOwner().getId(),userId)) {
-            throw new IllegalArgumentException("Можно переводить только между своими картами");
-        }
         if (fromCard.getBalance().compareTo(amount) < 0) {
-            throw new IllegalArgumentException("Недостаточно средств на карте");
+            throw new CustomExceptions.InvalidOperationException("Недостаточно средств на карте");
         }
 
-        fromCard.setBalance(fromCard.getBalance().subtract(amount));
-        toCard.setBalance(toCard.getBalance().add(amount));
-
-        cardRepository.save(fromCard);
-        cardRepository.save(toCard);
+        if (Objects.equals(fromCard.getOwner().getId(),userId) && Objects.equals(toCard.getOwner().getId(),userId)) {
+            fromCard.setBalance(fromCard.getBalance().subtract(amount));
+            toCard.setBalance(toCard.getBalance().add(amount));
+            cardRepository.save(fromCard);
+            cardRepository.save(toCard);
+        } else throw new CustomExceptions.CardDontBelongUserException("Одна из карт не принадлежит пользователю");
     }
 
+    public Page<Card> getAllCard(int page, int size){
+        return cardRepository.findAll(PageRequest.of(page, size));
+    }
 
     public BigDecimal getCardBalance(Long cardId) {
-        Card card = cardRepository.findById(cardId)
-                .orElseThrow(() -> new IllegalArgumentException("Карта не найдена"));
-        return card.getBalance();
+        return cardRepository.findById(cardId)
+                .map(Card::getBalance)
+                .orElseThrow(() -> new CustomExceptions.EntityNotFoundException("Карта с id " + cardId + " не найдена"));
     }
 }
+

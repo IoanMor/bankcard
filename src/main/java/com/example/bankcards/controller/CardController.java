@@ -44,10 +44,10 @@ public class CardController {
     }
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping("/admin/cards")
-    public ResponseEntity<List<CardDTO>> getAllCards() {
-       List<CardDTO> dtoList = cardService.getAllCards().stream()
-               .map(MapperToDTO::cardToDTO)
-               .toList();
+    public ResponseEntity<List<CardDTO>> getAllCards(@RequestParam int page, @RequestParam int size) {
+        List<CardDTO> dtoList = cardService.getAllCard(page, size).stream()
+                .map(MapperToDTO::cardToDTO)
+                .toList();
         return ResponseEntity.ok(dtoList);
     }
 
